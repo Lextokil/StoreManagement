@@ -30,6 +30,7 @@ public class StoreManagementDbContext : DbContext
             {
                 Id = Guid.NewGuid(),
                 Name = "Demo Company",
+                Code = 1,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             }
