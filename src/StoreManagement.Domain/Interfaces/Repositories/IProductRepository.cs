@@ -6,6 +6,6 @@ public interface IProductRepository : IGenericRepository<Product>
 {
     Task<IEnumerable<Product>> GetByStoreIdAsync(Guid storeId);
     Task<IEnumerable<Product>> GetByCompanyIdAsync(Guid companyId);
-    Task<IEnumerable<Product>> GetLowStockProductsAsync(Guid companyId, int threshold = 10);
+    Task<Product?> GetByCodesAsync(int companyCode, int storeCode, int productCode);
     Task<string> GetProductsAsJsonAsync(Guid companyId);
 }

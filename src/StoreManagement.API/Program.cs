@@ -59,6 +59,7 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Register services
+builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 

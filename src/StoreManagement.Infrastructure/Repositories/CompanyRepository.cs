@@ -17,6 +17,11 @@ public class CompanyRepository : GenericRepository<Company>, ICompanyRepository
         return await _dbSet.FirstOrDefaultAsync(c => c.Name == name);
     }
 
+    public async Task<Company?> GetByCodeAsync(int code)
+    {
+        return await _dbSet.FirstOrDefaultAsync(c => c.Code == code);
+    }
+
     public async Task<IEnumerable<Company>> GetActiveCompaniesAsync()
     {
         return await _dbSet.Where(c => c.IsActive).ToListAsync();
@@ -27,5 +32,12 @@ public class CompanyRepository : GenericRepository<Company>, ICompanyRepository
         return await _dbSet
             .Include(c => c.Stores)
             .FirstOrDefaultAsync(c => c.Id == id);
+    }
+
+    public async Task<Company?> GetCompanyWithStoresByCodeAsync(int code)
+    {
+        return await _dbSet
+            .Include(c => c.Stores)
+            .FirstOrDefaultAsync(c => c.Code == code);
     }
 }

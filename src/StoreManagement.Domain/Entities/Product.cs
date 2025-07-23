@@ -9,8 +9,7 @@ public class Product : BaseEntity
 
     public decimal Price { get; set; }
 
-    public int StockQuantity { get; set; }
-
+    public int Code { get; set; }
     public Guid StoreId { get; set; }
 
     public virtual Store Store { get; set; } = null!;

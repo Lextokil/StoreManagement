@@ -4,6 +4,8 @@ namespace StoreManagement.Domain.Entities;
 public class Store : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
+    
+    public int Code { get; set; }
 
     public string? Address { get; set; }
 

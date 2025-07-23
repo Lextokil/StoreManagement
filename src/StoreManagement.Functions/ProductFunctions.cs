@@ -19,117 +19,31 @@ public class ProductFunctions
         _productService = productService;
     }
 
-    [Function("GetProducts")]
-    public async Task<HttpResponseData> GetProducts(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "products")]
-        HttpRequestData req)
+    [Function("GetProductsByStoreCode")]
+    public async Task<HttpResponseData> GetProductsByStoreCode(
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "products/store/{storeCode}")]
+        HttpRequestData req,
+        int storeCode)
     {
-        _logger.LogInformation("Getting all products");
+        _logger.LogInformation("Getting products for store code {StoreCode}", storeCode);
 
         try
         {
-            var products = await _productService.GetAllProductsAsync();
+            if (!await _productService.StoreExistsByCodeAsync(storeCode))
+            {
+                var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
+                await notFoundResponse.WriteStringAsync($"Store with code {storeCode} not found");
+                return notFoundResponse;
+            }
+
+            var products = await _productService.GetProductsByStoreCodeAsync(storeCode);
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(products);
             return response;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting products");
-            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync("Internal server error");
-            return errorResponse;
-        }
-    }
-
-    [Function("GetProductsByCompany")]
-    public async Task<HttpResponseData> GetProductsByCompany(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "products/company/{companyId}")]
-        HttpRequestData req,
-        Guid companyId)
-    {
-        _logger.LogInformation("Getting products for company {CompanyId}", companyId);
-
-        try
-        {
-            if (!await _productService.CompanyExistsAsync(companyId))
-            {
-                var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFoundResponse.WriteStringAsync($"Company with ID {companyId} not found");
-                return notFoundResponse;
-            }
-
-            var products = await _productService.GetProductsByCompanyAsync(companyId);
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(products);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting products for company {CompanyId}", companyId);
-            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync("Internal server error");
-            return errorResponse;
-        }
-    }
-
-    [Function("GetProductsByStore")]
-    public async Task<HttpResponseData> GetProductsByStore(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "products/store/{storeId}")]
-        HttpRequestData req,
-        Guid storeId)
-    {
-        _logger.LogInformation("Getting products for store {StoreId}", storeId);
-
-        try
-        {
-            if (!await _productService.StoreExistsAsync(storeId))
-            {
-                var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFoundResponse.WriteStringAsync($"Store with ID {storeId} not found");
-                return notFoundResponse;
-            }
-
-            var products = await _productService.GetProductsByStoreAsync(storeId);
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(products);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting products for store {StoreId}", storeId);
-            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync("Internal server error");
-            return errorResponse;
-        }
-    }
-
-    [Function("GetProductsAsJson")]
-    public async Task<HttpResponseData> GetProductsAsJson(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "products/company/{companyId}/json")]
-        HttpRequestData req,
-        Guid companyId)
-    {
-        _logger.LogInformation("Getting products as JSON for company {CompanyId}", companyId);
-
-        try
-        {
-            if (!await _productService.CompanyExistsAsync(companyId))
-            {
-                var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFoundResponse.WriteStringAsync($"Company with ID {companyId} not found");
-                return notFoundResponse;
-            }
-
-            var jsonResult = await _productService.GetProductsAsJsonAsync(companyId);
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "application/json");
-            await response.WriteStringAsync(jsonResult);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting products as JSON for company {CompanyId}", companyId);
+            _logger.LogError(ex, "Error getting products for store code {StoreCode}", storeCode);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteStringAsync("Internal server error");
             return errorResponse;
@@ -189,10 +103,10 @@ public class ProductFunctions
                 return badRequestResponse;
             }
 
-            if (!await _productService.StoreExistsAsync(createProductDto.StoreId))
+            if (!await _productService.StoreExistsByCodeAsync(createProductDto.StoreCode))
             {
                 var badRequestResponse = req.CreateResponse(HttpStatusCode.BadRequest);
-                await badRequestResponse.WriteStringAsync($"Store with ID {createProductDto.StoreId} not found");
+                await badRequestResponse.WriteStringAsync($"Store with code {createProductDto.StoreCode} not found");
                 return badRequestResponse;
             }
 
@@ -240,10 +154,10 @@ public class ProductFunctions
                 return badRequestResponse;
             }
 
-            if (!await _productService.StoreExistsAsync(updateProductDto.StoreId))
+            if (!await _productService.StoreExistsByCodeAsync(updateProductDto.StoreCode))
             {
                 var badRequestResponse = req.CreateResponse(HttpStatusCode.BadRequest);
-                await badRequestResponse.WriteStringAsync($"Store with ID {updateProductDto.StoreId} not found");
+                await badRequestResponse.WriteStringAsync($"Store with code {updateProductDto.StoreCode} not found");
                 return badRequestResponse;
             }
 

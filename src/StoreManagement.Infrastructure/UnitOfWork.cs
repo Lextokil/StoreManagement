@@ -24,8 +24,25 @@ public class UnitOfWork : IUnitOfWork
 
     public Task RollbackSync()
     {
-        // Em Entity Framework, o rollback é automático se não chamarmos SaveChanges
-        // ou se uma transação falhar
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Modified:
+                    entry.CurrentValues.SetValues(entry.OriginalValues);
+                    entry.State = EntityState.Unchanged;
+                    break;
+
+                case EntityState.Added:
+                    entry.State = EntityState.Detached;
+                    break;
+
+                case EntityState.Deleted:
+                    entry.State = EntityState.Unchanged;
+                    break;
+            }
+        }
+
         return Task.CompletedTask;
     }
 

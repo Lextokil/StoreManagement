@@ -23,11 +23,12 @@ public class StoresControllerTests
     public async Task GetStores_ReturnsOkResult_WithListOfStores()
     {
         var companyId = Guid.NewGuid();
+        var companyCode = 1001;
         // Arrange
         var stores = new List<StoreDto>
         {
-            new StoreDto { Id = Guid.NewGuid(), Name = "Store 1", CompanyId = companyId },
-            new StoreDto { Id = Guid.NewGuid(), Name = "Store 2", CompanyId = companyId }
+            new StoreDto { Id = Guid.NewGuid(), Name = "Store 1", Code = 101, CompanyId = companyId, CompanyCode = companyCode, CompanyName = "Test Company" },
+            new StoreDto { Id = Guid.NewGuid(), Name = "Store 2", Code = 102, CompanyId = companyId, CompanyCode = companyCode, CompanyName = "Test Company" }
         };
         _mockStoreService.Setup(s => s.GetAllStoresAsync()).ReturnsAsync(stores);
 
@@ -46,7 +47,8 @@ public class StoresControllerTests
         // Arrange
         var storeId = Guid.NewGuid();
         var companyId = Guid.NewGuid();
-        var store = new StoreDto { Id = storeId, Name = "Test Store", CompanyId = companyId };
+        var companyCode = 1001;
+        var store = new StoreDto { Id = storeId, Name = "Test Store", Code = 101, CompanyId = companyId, CompanyCode = companyCode, CompanyName = "Test Company" };
         _mockStoreService.Setup(s => s.GetStoreByIdAsync(storeId)).ReturnsAsync(store);
 
         // Act
@@ -76,20 +78,24 @@ public class StoresControllerTests
     public async Task CreateStore_WithValidData_ReturnsCreatedResult()
     {
         // Arrange
+        var companyCode = 1001;
         var createStoreDto = new CreateStoreDto
         {
             Name = "New Store",
-            CompanyId = Guid.NewGuid(),
+            Code = 101,
+            CompanyCode = companyCode,
             Address = "123 Main St"
         };
         var createdStore = new StoreDto
         {
             Id = Guid.NewGuid(),
             Name = createStoreDto.Name,
-            CompanyId = createStoreDto.CompanyId,
+            Code = createStoreDto.Code,
+            CompanyCode = createStoreDto.CompanyCode,
+            CompanyName = "Test Company",
             Address = createStoreDto.Address
         };
-        _mockStoreService.Setup(s => s.CompanyExistsAsync(createStoreDto.CompanyId)).ReturnsAsync(true);
+        _mockStoreService.Setup(s => s.CompanyExistsByCodeAsync(createStoreDto.CompanyCode)).ReturnsAsync(true);
         _mockStoreService.Setup(s => s.CreateStoreAsync(createStoreDto)).ReturnsAsync(createdStore);
 
         // Act
@@ -106,19 +112,23 @@ public class StoresControllerTests
     {
         // Arrange
         var storeId = Guid.NewGuid();
+        var companyCode = 1001;
         var updateStoreDto = new UpdateStoreDto
         {
             Name = "Updated Store",
-            CompanyId = Guid.NewGuid()
+            Code = 101,
+            CompanyCode = companyCode
         };
         var updatedStore = new StoreDto
         {
             Id = storeId,
             Name = updateStoreDto.Name,
-            CompanyId = updateStoreDto.CompanyId
+            Code = updateStoreDto.Code,
+            CompanyCode = updateStoreDto.CompanyCode,
+            CompanyName = "Test Company"
         };
         _mockStoreService.Setup(s => s.StoreExistsAsync(storeId)).ReturnsAsync(true);
-        _mockStoreService.Setup(s => s.CompanyExistsAsync(updateStoreDto.CompanyId)).ReturnsAsync(true);
+        _mockStoreService.Setup(s => s.CompanyExistsByCodeAsync(updateStoreDto.CompanyCode)).ReturnsAsync(true);
         _mockStoreService.Setup(s => s.UpdateStoreAsync(storeId, updateStoreDto)).ReturnsAsync(updatedStore);
 
         // Act

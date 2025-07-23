@@ -27,20 +27,27 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
-    /// Get stores by company
+    /// Get stores by company code
     /// </summary>
-    /// <param name="companyId">Company ID</param>
+    /// <param name="companyCode">Company Code</param>
     /// <returns>List of stores for the company</returns>
-    [HttpGet("company/{companyId}")]
-    public async Task<ActionResult<IEnumerable<StoreDto>>> GetStoresByCompany(Guid companyId)
+    [HttpGet("company/{companyCode}")]
+    public async Task<ActionResult<IEnumerable<StoreDto>>> GetStoresByCompanyCode(int companyCode)
     {
-        if (!await _storeService.CompanyExistsAsync(companyId))
+        if (!await _storeService.CompanyExistsByCodeAsync(companyCode))
         {
-            return NotFound($"Company with ID {companyId} not found.");
+            return NotFound($"Company with code {companyCode} not found.");
         }
 
-        var stores = await _storeService.GetStoresByCompanyAsync(companyId);
-        return Ok(stores);
+        try
+        {
+            var stores = await _storeService.GetStoresByCompanyCodeAsync(companyCode);
+            return Ok(stores);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     /// <summary>
@@ -73,9 +80,9 @@ public class StoresController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (!await _storeService.CompanyExistsAsync(createStoreDto.CompanyId))
+        if (!await _storeService.CompanyExistsByCodeAsync(createStoreDto.CompanyCode))
         {
-            return BadRequest($"Company with ID {createStoreDto.CompanyId} not found.");
+            return BadRequest($"Company with code {createStoreDto.CompanyCode} not found.");
         }
 
         try
@@ -108,14 +115,59 @@ public class StoresController : ControllerBase
             return NotFound($"Store with ID {id} not found.");
         }
 
-        if (!await _storeService.CompanyExistsAsync(updateStoreDto.CompanyId))
+        if (!await _storeService.CompanyExistsByCodeAsync(updateStoreDto.CompanyCode))
         {
-            return BadRequest($"Company with ID {updateStoreDto.CompanyId} not found.");
+            return BadRequest($"Company with code {updateStoreDto.CompanyCode} not found.");
         }
 
         try
         {
             var updatedStore = await _storeService.UpdateStoreAsync(id, updateStoreDto);
+            return Ok(updatedStore);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Partially update an existing store (updates only provided fields)
+    /// </summary>
+    /// <param name="id">Store ID</param>
+    /// <param name="patchStoreDto">Store partial update data</param>
+    /// <returns>Updated store</returns>
+    [HttpPatch("{id}")]
+    public async Task<ActionResult<StoreDto>> PatchStore(Guid id, PatchStoreDto patchStoreDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (!await _storeService.StoreExistsAsync(id))
+        {
+            return NotFound($"Store with ID {id} not found.");
+        }
+
+        // Validate that at least one field is provided for patch
+        if (patchStoreDto.Name == null && patchStoreDto.Code == null && 
+            patchStoreDto.Address == null && patchStoreDto.IsActive == null && 
+            patchStoreDto.CompanyCode == null)
+        {
+            return BadRequest("At least one field must be provided for partial update.");
+        }
+
+        // Validate company code if provided
+        if (patchStoreDto.CompanyCode.HasValue && 
+            !await _storeService.CompanyExistsByCodeAsync(patchStoreDto.CompanyCode.Value))
+        {
+            return BadRequest($"Company with code {patchStoreDto.CompanyCode.Value} not found.");
+        }
+
+        try
+        {
+            var updatedStore = await _storeService.PatchStoreAsync(id, patchStoreDto);
             return Ok(updatedStore);
         }
         catch (Exception ex)

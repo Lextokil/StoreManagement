@@ -13,6 +13,20 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
     {
     }
 
+    public override async Task<IEnumerable<Product>> GetAllAsync()
+    {
+        return await _dbSet
+            .Include(p => p.Store)
+            .ToListAsync();
+    }
+
+    public override async Task<Product?> GetByIdAsync(Guid id)
+    {
+        return await _dbSet
+            .Include(p => p.Store)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
     public async Task<IEnumerable<Product>> GetByStoreIdAsync(Guid storeId)
     {
         return await _dbSet
@@ -29,12 +43,14 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Product>> GetLowStockProductsAsync(Guid companyId, int threshold = 10)
+    public async Task<Product?> GetByCodesAsync(int companyCode, int storeCode, int productCode)
     {
         return await _dbSet
             .Include(p => p.Store)
-            .Where(p => p.Store.CompanyId == companyId && p.StockQuantity <= threshold)
-            .ToListAsync();
+            .ThenInclude(s => s.Company)
+            .FirstOrDefaultAsync(p => p.Code == productCode && 
+                                     p.Store.Code == storeCode && 
+                                     p.Store.Company.Code == companyCode);
     }
 
     public async Task<string> GetProductsAsJsonAsync(Guid companyId)

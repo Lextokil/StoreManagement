@@ -26,9 +26,15 @@ public class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
+    public async Task<IEnumerable<ProductDto>> GetProductsByStoreCodeAsync(int storeCode)
     {
-        var products = await _productRepository.GetAllAsync();
+        var store = await _storeRepository.GetByCodeAsync(storeCode);
+        if (store == null)
+        {
+            throw new ArgumentException($"Store with code {storeCode} not found.");
+        }
+
+        var products = await _productRepository.GetByStoreIdAsync(store.Id);
         return _mapper.Map<IEnumerable<ProductDto>>(products);
     }
 
@@ -38,45 +44,23 @@ public class ProductService : IProductService
         return product != null ? _mapper.Map<ProductDto>(product) : null;
     }
 
-    public async Task<IEnumerable<ProductDto>> GetProductsByStoreAsync(Guid storeId)
-    {
-        var products = await _productRepository.GetByStoreIdAsync(storeId);
-        return _mapper.Map<IEnumerable<ProductDto>>(products);
-    }
-
-    public async Task<IEnumerable<ProductDto>> GetProductsByCompanyAsync(Guid companyId)
-    {
-        var products = await _productRepository.GetByCompanyIdAsync(companyId);
-        return _mapper.Map<IEnumerable<ProductDto>>(products);
-    }
-
-    public async Task<IEnumerable<ProductDto>> GetLowStockProductsAsync(Guid companyId, int threshold = 10)
-    {
-        var products = await _productRepository.GetLowStockProductsAsync(companyId, threshold);
-        return _mapper.Map<IEnumerable<ProductDto>>(products);
-    }
-
-    public async Task<string> GetProductsAsJsonAsync(Guid companyId)
-    {
-        return await _productRepository.GetProductsAsJsonAsync(companyId);
-    }
-
     public async Task<ProductDto> CreateProductAsync(CreateProductDto createProductDto)
     {
-        // Validate store exists
-        var store = await _storeRepository.GetByIdAsync(createProductDto.StoreId);
+        // Validate store exists by code
+        var store = await _storeRepository.GetByCodeAsync(createProductDto.StoreCode);
         if (store == null)
         {
-            throw new ArgumentException($"Store with ID {createProductDto.StoreId} not found.");
+            throw new ArgumentException($"Store with code {createProductDto.StoreCode} not found.");
         }
 
         var product = new Product
         {
             Name = createProductDto.Name,
+            Code = createProductDto.Code,
             Description = createProductDto.Description,
             Price = createProductDto.Price,
-            StockQuantity = createProductDto.StockQuantity,
-            StoreId = createProductDto.StoreId,
+            IsActive = createProductDto.IsActive,
+            StoreId = store.Id,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -92,20 +76,60 @@ public class ProductService : IProductService
         if (product == null)
             throw new ArgumentException($"Product with ID {id} not found.");
 
-        if (product.StoreId != updateProductDto.StoreId)
+        // Validate store exists by code
+        var store = await _storeRepository.GetByCodeAsync(updateProductDto.StoreCode);
+        if (store == null)
         {
-            var store = await _storeRepository.GetByIdAsync(updateProductDto.StoreId);
-            if (store == null)
-            {
-                throw new ArgumentException($"Store with ID {updateProductDto.StoreId} not found.");
-            }
+            throw new ArgumentException($"Store with code {updateProductDto.StoreCode} not found.");
         }
 
         product.Name = updateProductDto.Name;
+        product.Code = updateProductDto.Code;
         product.Description = updateProductDto.Description;
         product.Price = updateProductDto.Price;
-        product.StockQuantity = updateProductDto.StockQuantity;
-        product.StoreId = updateProductDto.StoreId;
+        product.IsActive = updateProductDto.IsActive;
+        product.StoreId = store.Id;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        _productRepository.UpdateAsync(product);
+        await _unitOfWork.CommitAsync();
+
+        return _mapper.Map<ProductDto>(product);
+    }
+
+    public async Task<ProductDto> PatchProductAsync(Guid id, PatchProductDto patchProductDto)
+    {
+        var product = await _productRepository.GetByIdAsync(id);
+        if (product == null)
+            throw new ArgumentException($"Product with ID {id} not found.");
+
+        // Update only provided fields
+        if (patchProductDto.Name != null)
+            product.Name = patchProductDto.Name;
+
+        if (patchProductDto.Code.HasValue)
+            product.Code = patchProductDto.Code.Value;
+
+        if (patchProductDto.Description != null)
+            product.Description = patchProductDto.Description;
+
+        if (patchProductDto.Price.HasValue)
+            product.Price = patchProductDto.Price.Value;
+
+        if (patchProductDto.IsActive.HasValue)
+            product.IsActive = patchProductDto.IsActive.Value;
+
+        if (patchProductDto.StoreCode.HasValue)
+        {
+            var store = await _storeRepository.GetByCodeAsync(patchProductDto.StoreCode.Value);
+            if (store == null)
+            {
+                throw new ArgumentException($"Store with code {patchProductDto.StoreCode.Value} not found.");
+            }
+            product.StoreId = store.Id;
+        }
+
+        product.UpdatedAt = DateTime.UtcNow;
 
         _productRepository.UpdateAsync(product);
         await _unitOfWork.CommitAsync();
@@ -124,24 +148,9 @@ public class ProductService : IProductService
         return await _productRepository.ExistsAsync(id);
     }
 
-    public async Task<bool> StoreExistsAsync(Guid storeId)
+    public async Task<bool> StoreExistsByCodeAsync(int storeCode)
     {
-        return await _storeRepository.ExistsAsync(storeId);
-    }
-
-    public async Task<bool> CompanyExistsAsync(Guid companyId)
-    {
-        var stores = await _storeRepository.FindAsync(s => s.CompanyId == companyId);
-        return stores.Any();
-    }
-
-    public async Task<int> GetProductCountAsync()
-    {
-        return await _productRepository.CountAsync();
-    }
-
-    public async Task<int> GetProductCountByStoreAsync(Guid storeId)
-    {
-        return await _productRepository.CountAsync(p => p.StoreId == storeId);
+        var store = await _storeRepository.GetByCodeAsync(storeCode);
+        return store != null;
     }
 }

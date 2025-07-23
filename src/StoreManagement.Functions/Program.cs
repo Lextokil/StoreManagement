@@ -50,20 +50,16 @@ var host = new HostBuilder()
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
 
-        // Configure Entity Framework
         var connectionString = context.Configuration.GetConnectionString("DefaultConnection")
             ?? "Server=(localdb)\\mssqllocaldb;Database=StoreManagementDb;Trusted_Connection=true;MultipleActiveResultSets=true";
 
         services.AddDbContext<StoreManagementDbContext>(options =>
             options.UseSqlServer(connectionString));
 
-        // Register repositories
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-        // Register services
         services.AddScoped<IProductService, ProductService>();
 
-        // Add AutoMapper
         services.AddAutoMapper(typeof(Program));
     })
     .Build();
