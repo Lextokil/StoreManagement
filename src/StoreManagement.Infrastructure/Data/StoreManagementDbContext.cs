@@ -16,10 +16,7 @@ public class StoreManagementDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        modelBuilder.ApplyConfigurationsFromAssembly(
-            typeof(StoreManagement.Domain.Mappings.CompanyMapping).Assembly);
-        
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Domain.Mappings.CompanyMapping).Assembly);
         SeedData(modelBuilder);
     }
     
