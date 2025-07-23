@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StoreManagement.Database;
 using StoreManagement.Domain.Interfaces;
 using StoreManagement.Domain.Interfaces.Repositories;
 using StoreManagement.Domain.Interfaces.Services;
@@ -26,7 +27,11 @@ public static class DependencyInjection
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<IProductService, ProductService>();
+        
         AddDataBase(builder);
+        
+        // Add Database services (including migrations)
+        services.AddMigrationService(builder.Configuration);
 
         return services;
     }

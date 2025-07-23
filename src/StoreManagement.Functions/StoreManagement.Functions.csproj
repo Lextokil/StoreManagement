@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\StoreManagement.Domain\StoreManagement.Domain.csproj" />
     <ProjectReference Include="..\StoreManagement.Infrastructure\StoreManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\StoreManagement.Database\StoreManagement.Database.csproj" />
   </ItemGroup>
 
   <ItemGroup>

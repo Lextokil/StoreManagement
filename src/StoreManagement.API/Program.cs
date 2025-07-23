@@ -1,4 +1,5 @@
 using StoreManagement.API;
+using StoreManagement.Domain.Interfaces.Services;
 using StoreManagement.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,26 @@ if (!string.IsNullOrEmpty(appConfigEndpoint))
 
 
 var app = builder.Build();
+
+// Run database migrations automatically
+using (var scope = app.Services.CreateScope())
+{
+    var migrationService = scope.ServiceProvider.GetRequiredService<IMigrationService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("Starting database migrations...");
+        await migrationService.RunMigrationsAsync();
+        logger.LogInformation("Database migrations completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to run database migrations. Application will continue but may not work properly.");
+        // Continue running the application even if migrations fail
+        // This allows for debugging and manual intervention
+    }
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -40,7 +61,4 @@ app.MapControllers();
 
 app.MapHealthChecks("/health");
 
-// Note: Database migrations are now handled by the StoreManagement.Database project
-// Run the following command to apply migrations:
-// dotnet run --project src/StoreManagement.Database
 app.Run();
