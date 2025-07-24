@@ -21,7 +21,7 @@ public class ProductsController : ControllerBase
     /// <param name="storeCode">Store Code</param>
     /// <returns>List of products for the store</returns>
     [HttpGet("store/{storeCode}")]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProductsByStoreCode(int storeCode)
+    public async Task<ActionResult<string>> GetProductsByStoreCode(int storeCode)
     {
         if (!await _productService.StoreExistsByCodeAsync(storeCode))
         {

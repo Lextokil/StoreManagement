@@ -64,6 +64,17 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         return result ?? "[]";
     }
 
+    public async Task<string> GetProductsAsJsonByStoreIdAsync(Guid storeId)
+    {
+        var storeIdParam = new SqlParameter("@StoreId", storeId);
+        
+        var result = await _context.Database
+            .SqlQueryRaw<string>("SELECT dbo.fn_GetProductsAsJson(@StoreId) AS Value", storeIdParam)
+            .FirstOrDefaultAsync();
+
+        return result ?? "{\"products\": []}";
+    }
+
     public override async Task AddAsync(Product entity)
     {
         var nameParam = new SqlParameter("@Name", entity.Name);

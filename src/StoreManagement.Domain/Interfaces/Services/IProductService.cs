@@ -4,7 +4,7 @@ namespace StoreManagement.Domain.Interfaces.Services;
 
 public interface IProductService
 {
-    Task<IEnumerable<ProductDto>> GetProductsByStoreCodeAsync(int storeCode);
+    Task<string> GetProductsByStoreCodeAsync(int storeCode);
     Task<ProductDto?> GetProductByIdAsync(Guid id);
     Task<ProductDto> CreateProductAsync(CreateProductDto createProductDto);
     Task<ProductDto> UpdateProductAsync(Guid id, UpdateProductDto updateProductDto);

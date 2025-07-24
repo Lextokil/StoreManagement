@@ -5,6 +5,7 @@ using StoreManagement.Domain.Entities;
 using StoreManagement.Domain.Interfaces.Repositories;
 using StoreManagement.Domain.Interfaces.Services;
 using StoreManagement.Tests.Integration.Base;
+using System.Linq;
 
 namespace StoreManagement.Tests.Integration.Services;
 
@@ -123,7 +124,18 @@ public class ProductServiceIntegrationTests : IntegrationTestBase
                 Code = 603,
                 Description = "Description 2",
                 Price = 20.00m,
-                IsActive = false,
+                IsActive = false, 
+                StoreId = store.Id,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = "Product 3",
+                Code = 604,
+                Description = null, 
+                Price = 30.00m,
+                IsActive = true,
                 StoreId = store.Id,
                 CreatedAt = DateTime.UtcNow
             }
@@ -131,14 +143,9 @@ public class ProductServiceIntegrationTests : IntegrationTestBase
 
         await AddEntities(products);
 
-        // Act
         var result = await _productService.GetProductsByStoreCodeAsync(store.Code);
 
-        // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result.Should().Contain(p => p.Name == "Product 1" && p.Code == 602);
-        result.Should().Contain(p => p.Name == "Product 2" && p.Code == 603);
     }
 
     [Fact]

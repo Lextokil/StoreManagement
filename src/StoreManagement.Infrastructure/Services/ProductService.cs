@@ -26,7 +26,7 @@ public class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<ProductDto>> GetProductsByStoreCodeAsync(int storeCode)
+    public async Task<string> GetProductsByStoreCodeAsync(int storeCode)
     {
         var store = await _storeRepository.GetByCodeAsync(storeCode);
         if (store == null)
@@ -34,8 +34,10 @@ public class ProductService : IProductService
             throw new ArgumentException($"Store with code {storeCode} not found.");
         }
 
-        var products = await _productRepository.GetByStoreIdAsync(store.Id);
-        return _mapper.Map<IEnumerable<ProductDto>>(products);
+        // Usar a scalar function para obter produtos ativos como JSON
+        var jsonResult = await _productRepository.GetProductsAsJsonByStoreIdAsync(store.Id);
+
+        return jsonResult;
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)
