@@ -5,7 +5,7 @@ using StoreManagement.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
-    .AddInfrastructure(builder)
+    .AddInfrastructure(builder.Configuration)
     .AddApi()
     .AddAutoMapper(typeof(Program));
 

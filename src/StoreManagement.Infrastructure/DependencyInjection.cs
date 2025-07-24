@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,7 @@ namespace StoreManagement.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, WebApplicationBuilder builder)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
@@ -28,20 +27,20 @@ public static class DependencyInjection
         services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<IProductService, ProductService>();
         
-        AddDataBase(builder);
+        AddDataBase(services, configuration);
         
         // Add Database services (including migrations)
-        services.AddMigrationService(builder.Configuration);
+        services.AddMigrationService(configuration);
 
         return services;
     }
 
-    private static void AddDataBase(WebApplicationBuilder builder)
+    private static void AddDataBase(IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
                                ?? "Server=(localdb)\\mssqllocaldb;Database=StoreManagementDb;Trusted_Connection=true;MultipleActiveResultSets=true";
 
-        builder.Services.AddDbContext<StoreManagementDbContext>(options =>
+        services.AddDbContext<StoreManagementDbContext>(options =>
             options.UseSqlServer(connectionString));
     }
 }
