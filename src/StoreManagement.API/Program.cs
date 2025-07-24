@@ -1,13 +1,14 @@
 using StoreManagement.API;
 using StoreManagement.Domain.Interfaces.Services;
 using StoreManagement.Infrastructure;
+using StoreManagement.Infrastructure.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddApi()
-    .AddAutoMapper(typeof(Program));
+    .AddAutoMapper(typeof(AutoMapperProfile));
 
 // Configure Azure App Configuration
 var appConfigEndpoint = builder.Configuration["AppConfigEndpoint"];

@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using StoreManagement.API.Mappings;
 using StoreManagement.Database.Migrations;
 using StoreManagement.Domain.Interfaces;
 using StoreManagement.Domain.Interfaces.Repositories;
 using StoreManagement.Domain.Interfaces.Services;
 using StoreManagement.Infrastructure;
 using StoreManagement.Infrastructure.Data;
+using StoreManagement.Infrastructure.Mappings;
 using StoreManagement.Infrastructure.Repositories;
 using StoreManagement.Infrastructure.Services;
 

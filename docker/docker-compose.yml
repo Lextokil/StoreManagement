@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=MyS3cure@2025
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - storemanagement-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P MyS3cure@2025 -Q 'SELECT 1' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Store Management API
+  storemanagement-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: storemanagement-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=StoreManagementDb;User Id=sa;Password=MyS3cure@2025;TrustServerCertificate=true;MultipleActiveResultSets=true
+      - KeyVaultEndpoint=${KEYVAULT_ENDPOINT}
+      - AppConfigEndpoint=${APPCONFIG_ENDPOINT}
+    ports:
+      - "8080:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - storemanagement-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Store Management Functions
+  storemanagement-functions:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.functions
+    container_name: storemanagement-functions
+    environment:
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=StoreManagementDb;User Id=sa;Password=MyS3cure@2025;TrustServerCertificate=true;MultipleActiveResultSets=true
+      - KeyVaultEndpoint=${KEYVAULT_ENDPOINT}
+      - AppConfigEndpoint=${APPCONFIG_ENDPOINT}
+    ports:
+      - "7071:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      azurite:
+        condition: service_started
+    networks:
+      - storemanagement-network
+    restart: unless-stopped
+
+  # Azurite (Azure Storage Emulator)
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: storemanagement-azurite
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+    ports:
+      - "10000:10000"  # Blob service
+      - "10001:10001"  # Queue service
+      - "10002:10002"  # Table service
+    volumes:
+      - azurite_data:/data
+    networks:
+      - storemanagement-network
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+    driver: local
+  azurite_data:
+    driver: local
+
+networks:
+  storemanagement-network:
+    driver: bridge

@@ -1,0 +1,56 @@
+# Use the official .NET 8 runtime as base image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+# Use the official .NET 8 SDK for building
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# Copy project files
+COPY ["src/StoreManagement.Functions/StoreManagement.Functions.csproj", "src/StoreManagement.Functions/"]
+COPY ["src/StoreManagement.Core/StoreManagement.Core.csproj", "src/StoreManagement.Core/"]
+COPY ["src/StoreManagement.Infrastructure/StoreManagement.Infrastructure.csproj", "src/StoreManagement.Infrastructure/"]
+
+# Restore dependencies
+RUN dotnet restore "src/StoreManagement.Functions/StoreManagement.Functions.csproj"
+
+# Copy all source code
+COPY . .
+
+# Build the application
+WORKDIR "/src/src/StoreManagement.Functions"
+RUN dotnet build "StoreManagement.Functions.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# Publish the application
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "StoreManagement.Functions.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Final stage/image
+FROM base AS final
+WORKDIR /app
+
+# Install Azure Functions Core Tools
+RUN apt-get update && \
+    apt-get install -y curl gnupg && \
+    curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg && \
+    mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg && \
+    sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs)-prod $(lsb_release -cs) main" > /etc/apt/sources.list.d/dotnetdev.list' && \
+    apt-get update && \
+    apt-get install -y azure-functions-core-tools-4 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy published application
+COPY --from=publish /app/publish .
+
+# Create a non-root user
+RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
+USER appuser
+
+# Set environment variables
+ENV AzureWebJobsScriptRoot=/app \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+
+ENTRYPOINT ["dotnet", "StoreManagement.Functions.dll"]

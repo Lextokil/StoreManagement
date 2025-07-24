@@ -2,7 +2,7 @@ using AutoMapper;
 using StoreManagement.Domain.DTOs;
 using StoreManagement.Domain.Entities;
 
-namespace StoreManagement.API.Mappings;
+namespace StoreManagement.Infrastructure.Mappings;
 
 public class AutoMapperProfile : Profile
 {

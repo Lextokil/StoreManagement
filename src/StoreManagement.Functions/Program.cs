@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using StoreManagement.Domain.Interfaces.Services;
 using StoreManagement.Functions;
 using StoreManagement.Infrastructure;
+using StoreManagement.Infrastructure.Mappings;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -16,7 +17,7 @@ var host = new HostBuilder()
         services.AddInfrastructure(context.Configuration)
                 .AddFunctions();
 
-        services.AddAutoMapper(typeof(Program));
+        services.AddAutoMapper(typeof(AutoMapperProfile));
     })
     .Build();
 

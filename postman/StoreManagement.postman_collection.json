@@ -1,0 +1,1372 @@
+{
+	"info": {
+		"_postman_id": "240371e7-c571-4f06-b90b-a39944f59ece",
+		"name": "StoreManagement API & Functions",
+		"description": "Collection completa para testar todas as APIs do projeto StoreManagement, incluindo API REST e Azure Functions com testes automatizados.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "8356731"
+	},
+	"item": [
+		{
+			"name": "Companies API",
+			"item": [
+				{
+					"name": "Create Company",
+					"event": [
+						{
+							"listen": "pre-request",
+							"script": {
+								"exec": [
+									"// Generate unique company code",
+									"const timestamp = Date.now();",
+									"const randomCode = Math.floor(Math.random() * 1000) + timestamp;",
+									"pm.collectionVariables.set(\"newCompanyCode\", randomCode);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Company created successfully\", function () {",
+									"    const company = pm.response.json();",
+									"    pm.expect(company).to.have.property('id');",
+									"    pm.expect(company).to.have.property('name');",
+									"    pm.expect(company).to.have.property('code');",
+									"    pm.expect(company).to.have.property('isActive');",
+									"    pm.expect(company).to.have.property('createdAt');",
+									"});",
+									"",
+									"pm.test(\"Created company has correct data\", function () {",
+									"    const company = pm.response.json();",
+									"    pm.expect(company.name).to.equal(\"Test Company\");",
+									"    pm.expect(company.isActive).to.be.true;",
+									"});",
+									"",
+									"// Store created company data for cleanup",
+									"const createdCompany = pm.response.json();",
+									"postman.setEnvironmentVariable(\"createdCompanyId\", createdCompany.id);",
+									"postman.setEnvironmentVariable(\"createdCompanyCode\", createdCompany.code);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Name\": \"Test Company\",\n    \"Code\": {{newCompanyCode}},\n    \"IsActive\": true\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/companies"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Companies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 2000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"if (pm.response.json().length > 0) {",
+									"    pm.test(\"Company object has required fields\", function () {",
+									"        const company = pm.response.json()[0];",
+									"        pm.expect(company).to.have.property('id');",
+									"        pm.expect(company).to.have.property('name');",
+									"        pm.expect(company).to.have.property('code');",
+									"        pm.expect(company).to.have.property('isActive');",
+									"        pm.expect(company).to.have.property('createdAt');",
+									"    });",
+									"    ",
+									"    // Store first company data for other tests",
+									"    const firstCompany = pm.response.json()[0];",
+									"    pm.collectionVariables.set(\"companyId\", firstCompany.id);",
+									"    pm.collectionVariables.set(\"companyCode\", firstCompany.code);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/companies"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active Companies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"All companies are active\", function () {",
+									"    const companies = pm.response.json();",
+									"    companies.forEach(company => {",
+									"        pm.expect(company.isActive).to.be.true;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/companies/active"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Company by Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Company has correct structure\", function () {",
+									"    const companies = pm.response.json();",
+									"    const company = companies[0];",
+									"    pm.expect(company).to.have.property('id');",
+									"    pm.expect(company).to.have.property('name');",
+									"    pm.expect(company).to.have.property('code');",
+									"    pm.expect(company).to.have.property('isActive');",
+									"    pm.expect(company).to.have.property('createdAt');",
+									"});",
+									"",
+									"pm.test(\"Company code matches requested code\", function () {",
+									"    const companies = pm.response.json();",
+									"    const company = companies[0];",
+									"    const requestedCode = parseInt(pm.collectionVariables.get(\"companyCode\"));",
+									"    pm.expect(company.code).to.equal(requestedCode);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/companies/{{companyCode}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Company with Stores",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Company has correct structure\", function () {",
+									"    const company = pm.response.json();",
+									"    pm.expect(company).to.have.property('id');",
+									"    pm.expect(company).to.have.property('name');",
+									"    pm.expect(company).to.have.property('code');",
+									"    pm.expect(company).to.have.property('isActive');",
+									"    pm.expect(company).to.have.property('createdAt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/companies/{{companyCode}}/with-stores"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Company (PUT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Company updated successfully\", function () {",
+									"    const company = pm.response.json();",
+									"    pm.expect(company.name).to.equal(\"Updated Test Company\");",
+									"    pm.expect(company.isActive).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Test Company\",\n    \"code\": {{createdCompanyCode}},\n    \"isActive\": false\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/companies/{{createdCompanyCode}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Patch Company (PATCH)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Company patched successfully\", function () {",
+									"    const company = pm.response.json();",
+									"    pm.expect(company.name).to.equal(\"Patched Test Company\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Patched Test Company\"\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/companies/{{createdCompanyCode}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Non-Existent Company (404 Test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Error message is present\", function () {",
+									"    const responseText = pm.response.text();",
+									"    pm.expect(responseText).to.include(\"not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/companies/999999"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Company",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"Response body is empty\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/companies/{{createdCompanyCode}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Stores API",
+			"item": [
+				{
+					"name": "Create Store",
+					"event": [
+						{
+							"listen": "pre-request",
+							"script": {
+								"exec": [
+									"// Generate unique store code",
+									"const timestamp = Date.now();",
+									"const randomCode = Math.floor(Math.random() * 1000) + timestamp;",
+									"pm.collectionVariables.set(\"newStoreCode\", randomCode);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Store created successfully\", function () {",
+									"    const store = pm.response.json();",
+									"    pm.expect(store).to.have.property('id');",
+									"    pm.expect(store).to.have.property('name');",
+									"    pm.expect(store).to.have.property('code');",
+									"    pm.expect(store).to.have.property('address');",
+									"    pm.expect(store).to.have.property('isActive');",
+									"    pm.expect(store).to.have.property('createdAt');",
+									"    pm.expect(store).to.have.property('companyId');",
+									"    pm.expect(store).to.have.property('companyName');",
+									"    pm.expect(store).to.have.property('companyCode');",
+									"});",
+									"",
+									"pm.test(\"Created store has correct data\", function () {",
+									"    const store = pm.response.json();",
+									"    pm.expect(store.name).to.equal(\"Test Store\");",
+									"    pm.expect(store.address).to.equal(\"123 Test Street\");",
+									"    pm.expect(store.isActive).to.be.true;",
+									"});",
+									"",
+									"// Store created store data for cleanup",
+									"const createdStore = pm.response.json();",
+									"postman.setEnvironmentVariable(\"createdStoreId\", createdStore.id);",
+									"postman.setEnvironmentVariable(\"createdStoreCode\", createdStore.code);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Store\",\n    \"code\": {{newStoreCode}},\n    \"address\": \"123 Test Street\",\n    \"isActive\": true,\n    \"companyCode\": {{companyCode}}\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/stores"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Stores",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.be.an('array');",
+									"});",
+									"",
+									"if (pm.response.json().length > 0) {",
+									"    pm.test(\"Store object has required fields\", function () {",
+									"        const store = pm.response.json()[0];",
+									"        pm.expect(store).to.have.property('id');",
+									"        pm.expect(store).to.have.property('name');",
+									"        pm.expect(store).to.have.property('code');",
+									"        pm.expect(store).to.have.property('address');",
+									"        pm.expect(store).to.have.property('isActive');",
+									"        pm.expect(store).to.have.property('createdAt');",
+									"        pm.expect(store).to.have.property('companyId');",
+									"        pm.expect(store).to.have.property('companyName');",
+									"        pm.expect(store).to.have.property('companyCode');",
+									"        postman.setEnvironmentVariable(\"storeId\", store.id);",
+									"        postman.setEnvironmentVariable(\"storeCode\", store.code);",
+									"    });    ",
+									"    ",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/stores"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stores by Company Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"All stores belong to the requested company\", function () {",
+									"    const stores = pm.response.json();",
+									"    const requestedCompanyCode = parseInt(pm.collectionVariables.get(\"companyCode\"));",
+									"    stores.forEach(store => {",
+									"        pm.expect(store.companyCode).to.equal(requestedCompanyCode);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/stores/company/{{companyCode}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Store by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store has correct structure\", function () {",
+									"    const store = pm.response.json();",
+									"    pm.expect(store).to.have.property('id');",
+									"    pm.expect(store).to.have.property('name');",
+									"    pm.expect(store).to.have.property('code');",
+									"    pm.expect(store).to.have.property('address');",
+									"    pm.expect(store).to.have.property('isActive');",
+									"    pm.expect(store).to.have.property('createdAt');",
+									"    pm.expect(store).to.have.property('companyId');",
+									"    pm.expect(store).to.have.property('companyName');",
+									"    pm.expect(store).to.have.property('companyCode');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/stores/{{storeId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Store (PUT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store updated successfully\", function () {",
+									"    const store = pm.response.json();",
+									"    pm.expect(store.name).to.equal(\"Updated Test Store\");",
+									"    pm.expect(store.address).to.equal(\"456 Updated Street\");",
+									"    pm.expect(store.isActive).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Test Store\",\n    \"code\": {{createdStoreCode}},\n    \"address\": \"456 Updated Street\",\n    \"isActive\": false,\n    \"companyCode\": {{companyCode}}\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/stores/{{createdStoreId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Patch Store (PATCH)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store patched successfully\", function () {",
+									"    const store = pm.response.json();",
+									"    pm.expect(store.name).to.equal(\"Patched Test Store\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Patched Test Store\"\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/stores/{{createdStoreId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Store",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"Response body is empty\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/stores/{{createdStoreId}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products API",
+			"item": [
+				{
+					"name": "Create Product",
+					"event": [
+						{
+							"listen": "pre-request",
+							"script": {
+								"exec": [
+									"// Generate unique product code",
+									"const timestamp = Date.now();",
+									"const randomCode = Math.floor(Math.random() * 1000) + timestamp;",
+									"pm.collectionVariables.set(\"newProductCode\", randomCode);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Product created successfully\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product).to.have.property('id');",
+									"    pm.expect(product).to.have.property('name');",
+									"    pm.expect(product).to.have.property('code');",
+									"    pm.expect(product).to.have.property('description');",
+									"    pm.expect(product).to.have.property('price');",
+									"    pm.expect(product).to.have.property('isActive');",
+									"    pm.expect(product).to.have.property('createdAt');",
+									"    pm.expect(product).to.have.property('storeId');",
+									"    pm.expect(product).to.have.property('storeName');",
+									"    pm.expect(product).to.have.property('storeCode');",
+									"});",
+									"",
+									"pm.test(\"Created product has correct data\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product.name).to.equal(\"Test Product\");",
+									"    pm.expect(product.description).to.equal(\"Test product description\");",
+									"    pm.expect(product.price).to.equal(99.99);",
+									"    pm.expect(product.isActive).to.be.true;",
+									"});",
+									"",
+									"// Store created product data for cleanup",
+									"const createdProduct = pm.response.json();",
+									"postman.setEnvironmentVariable(\"createdProductId\", createdProduct.id);",
+									"postman.setEnvironmentVariable(\"createdProductCode\", createdProduct.code);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Product\",\n    \"code\": {{newProductCode}},\n    \"description\": \"Test product description\",\n    \"price\": 99.99,\n    \"isActive\": true,\n    \"storeCode\": {{storeCode}}\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/products"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products by Store Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is a string (JSON)\", function () {",
+									"    pm.expect(pm.response.text()).to.be.a('string');",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 3000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/products/store/{{storeCode}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"Status code is 200\", function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"    ",
+									"    pm.test(\"Product has correct structure\", function () {",
+									"        const product = pm.response.json();",
+									"        pm.expect(product).to.have.property('id');",
+									"        pm.expect(product).to.have.property('name');",
+									"        pm.expect(product).to.have.property('code');",
+									"        pm.expect(product).to.have.property('description');",
+									"        pm.expect(product).to.have.property('price');",
+									"        pm.expect(product).to.have.property('isActive');",
+									"        pm.expect(product).to.have.property('createdAt');",
+									"        pm.expect(product).to.have.property('storeId');",
+									"        pm.expect(product).to.have.property('storeName');",
+									"        pm.expect(product).to.have.property('storeCode');",
+									"    });",
+									"    ",
+									"    // Store product data for other tests",
+									"    const product = pm.response.json();",
+									"    pm.collectionVariables.set(\"productId\", product.id);",
+									"} else if (pm.response.code === 404) {",
+									"    pm.test(\"Status code is 404 for non-existent product\", function () {",
+									"        pm.response.to.have.status(404);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/products/{{createdProductId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product (PUT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Product updated successfully\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product.name).to.equal(\"Updated Test Product\");",
+									"    pm.expect(product.description).to.equal(\"Updated description\");",
+									"    pm.expect(product.price).to.equal(149.99);",
+									"    pm.expect(product.isActive).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Test Product\",\n    \"code\": {{createdProductCode}},\n    \"description\": \"Updated description\",\n    \"price\": 149.99,\n    \"isActive\": false,\n    \"storeCode\": {{storeCode}}\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/products/{{createdProductId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Patch Product (PATCH)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Product patched successfully\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product.name).to.equal(\"Patched Test Product\");",
+									"    pm.expect(product.price).to.equal(199.99);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Patched Test Product\",\n    \"price\": 199.99\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/products/{{createdProductId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"Response body is empty\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{apiBaseUrl}}/api/products/{{createdProductId}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Azure Functions",
+			"item": [
+				{
+					"name": "Functions - Create Product",
+					"event": [
+						{
+							"listen": "pre-request",
+							"script": {
+								"exec": [
+									"// Generate unique product code for function test",
+									"const timestamp = Date.now();",
+									"const randomCode = Math.floor(Math.random() * 1000) + timestamp;",
+									"pm.collectionVariables.set(\"newFunctionProductCode\", randomCode);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Product created successfully via Function\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product).to.have.property('id');",
+									"    pm.expect(product).to.have.property('name');",
+									"    pm.expect(product).to.have.property('code');",
+									"    pm.expect(product).to.have.property('description');",
+									"    pm.expect(product).to.have.property('price');",
+									"    pm.expect(product).to.have.property('isActive');",
+									"    pm.expect(product).to.have.property('createdAt');",
+									"    pm.expect(product).to.have.property('storeId');",
+									"    pm.expect(product).to.have.property('storeName');",
+									"    pm.expect(product).to.have.property('storeCode');",
+									"});",
+									"",
+									"pm.test(\"Created product has correct data\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product.name).to.equal(\"Function Test Product\");",
+									"    pm.expect(product.description).to.equal(\"Product created via Azure Function\");",
+									"    pm.expect(product.price).to.equal(299.99);",
+									"    pm.expect(product.isActive).to.be.true;",
+									"});",
+									"",
+									"// Store created product data for cleanup",
+									"const createdProduct = pm.response.json();",
+									"pm.collectionVariables.set(\"createdFunctionProductId\", createdProduct.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-functions-key",
+								"value": "{{functionKey}}",
+								"description": "Function key for authentication"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Function Test Product\",\n    \"code\": {{newFunctionProductCode}},\n    \"description\": \"Product created via Azure Function\",\n    \"price\": 299.99,\n    \"isActive\": true,\n    \"storeCode\": {{storeCode}}\n}"
+						},
+						"url": "{{functionsBaseUrl}}/api/products"
+					},
+					"response": []
+				},
+				{
+					"name": "Functions - Get Products by Store Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is a string (JSON)\", function () {",
+									"    pm.expect(pm.response.text()).to.be.a('string');",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 5000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-functions-key",
+								"value": "{{functionKey}}",
+								"description": "Function key for authentication"
+							}
+						],
+						"url": "{{functionsBaseUrl}}/api/products/store/{{storeCode}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Functions - Get Product by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"Status code is 200\", function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"    ",
+									"    pm.test(\"Product has correct structure\", function () {",
+									"        const product = pm.response.json();",
+									"        pm.expect(product).to.have.property('id');",
+									"        pm.expect(product).to.have.property('name');",
+									"        pm.expect(product).to.have.property('code');",
+									"        pm.expect(product).to.have.property('description');",
+									"        pm.expect(product).to.have.property('price');",
+									"        pm.expect(product).to.have.property('isActive');",
+									"        pm.expect(product).to.have.property('createdAt');",
+									"        pm.expect(product).to.have.property('storeId');",
+									"        pm.expect(product).to.have.property('storeName');",
+									"        pm.expect(product).to.have.property('storeCode');",
+									"    });",
+									"} else if (pm.response.code === 404) {",
+									"    pm.test(\"Status code is 404 for non-existent product\", function () {",
+									"        pm.response.to.have.status(404);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-functions-key",
+								"value": "{{functionKey}}",
+								"description": "Function key for authentication"
+							}
+						],
+						"url": "{{functionsBaseUrl}}/api/products/{{productId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Functions - Update Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Product updated successfully via Function\", function () {",
+									"    const product = pm.response.json();",
+									"    pm.expect(product.name).to.equal(\"Updated Function Product\");",
+									"    pm.expect(product.description).to.equal(\"Updated via Azure Function\");",
+									"    pm.expect(product.price).to.equal(399.99);",
+									"    pm.expect(product.isActive).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-functions-key",
+								"value": "{{functionKey}}",
+								"description": "Function key for authentication"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Function Product\",\n    \"code\": {{newFunctionProductCode}},\n    \"description\": \"Updated via Azure Function\",\n    \"price\": 399.99,\n    \"isActive\": false,\n    \"storeCode\": {{storeCode}}\n}"
+						},
+						"url": "{{functionsBaseUrl}}/api/products/{{createdFunctionProductId}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Functions - Delete Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"Response body is empty\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "x-functions-key",
+								"value": "{{functionKey}}",
+								"description": "Function key for authentication"
+							}
+						],
+						"url": "{{functionsBaseUrl}}/api/products/{{createdFunctionProductId}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Error Scenarios",
+			"item": [
+				{
+					"name": "Invalid Company Code (400 Test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+									"});",
+									"",
+									"pm.test(\"Error message is present\", function () {",
+									"    const responseText = pm.response.text();",
+									"    pm.expect(responseText.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Store\",\n    \"code\": 12345,\n    \"address\": \"123 Test Street\",\n    \"isActive\": true,\n    \"companyCode\": 999999\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/stores"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Store Code for Product (400 Test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+									"});",
+									"",
+									"pm.test(\"Error message is present\", function () {",
+									"    const responseText = pm.response.text();",
+									"    pm.expect(responseText.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Product\",\n    \"code\": 12345,\n    \"description\": \"Test product\",\n    \"price\": 99.99,\n    \"isActive\": true,\n    \"storeCode\": 999999\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/products"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid JSON Body (400 Test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message is present\", function () {",
+									"    const responseText = pm.response.text();",
+									"    pm.expect(responseText.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Company\",\n    \"code\": \"invalid_code\",\n    \"isActive\": \"not_boolean\"\n}"
+						},
+						"url": "{{apiBaseUrl}}/api/companies"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "apiBaseUrl",
+			"value": "http://localhost:5076",
+			"type": "string"
+		},
+		{
+			"key": "functionsBaseUrl",
+			"value": "http://localhost:7071",
+			"type": "string"
+		},
+		{
+			"key": "functionKey",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "companyId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "companyCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "storeId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "storeCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "productId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdCompanyId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdCompanyCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdStoreId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdStoreCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdProductId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdProductCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdFunctionProductId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "newCompanyCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "newStoreCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "newProductCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "newFunctionProductCode",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
