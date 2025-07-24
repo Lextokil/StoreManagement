@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "TestConnection": "Server=127.0.0.1,1433;Database=StoreManagementDb_Tests;User Id=sa;Password=MyS3cure@2025;TrustServerCertificate=True;Encrypt=False;"
+    "TestConnection": "Server=(localdb)\\mssqllocaldb;Database=StoreManagementDb_Tests;Trusted_Connection=true;MultipleActiveResultSets=true"
   },
   "Logging": {
     "LogLevel": {
